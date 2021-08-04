@@ -1,11 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
-from pprint import pprint
 from jinja2 import Template
 import smtplib
 from email.message import EmailMessage
-import ssl
-import time
+import pickle
 
 template = """
         <dl class="inline">
@@ -13,10 +11,10 @@ template = """
             <dt>Дата публикации</dt><dd>{{ a.publication_date }}</dd>
             <dt>Дата выявления</dt><dd>{{ a.detection_date }}</dd>
             <dt>Производитель ПО</dt><dd>{{ a.vendor }}</dd>
-            <dt>Наименование ПО</dt><dd>{{ a.products }}</dd>
+            <dt>Наименование ПО</dt><dd>{{ a.products|join(', ') }}</dd>
             <dt>Уровень опасности</dt><dd>{{ a.severity }}</dd>
-            <dt>CVSSv3 Score</dt><dd>{{ a.cvss_v3_score }}</dd>
-            <dt>Links</dt><dd>{{ bulletin_pdf_url }}</dd>
+            <dt>CVSSv3 Score</dt><dd>{{ a.cvss_v3_score }} - {{ a.severity }}</dd>
+            <dt>Links</dt><dd>{{ a.bulletin_pdf_url }}</dd>
         </dl>"""
 
 
@@ -63,23 +61,33 @@ def get_bulletins(page=1):
 
 if __name__ == '__main__':
     a = get_bulletins()
+    b = get_bulletins(page=2)
+    c = get_bulletins(page=3)
+    d = {**a, **b, **c}
     jinja_template = Template(template)
     EMAIL_HOST = ''
     EMAIL_PORT = 465
     EMAIL_HOST_PASSWORD = ''
     EMAIL_HOST_USER = ''
-    for title in a.keys():
-        msg = EmailMessage()
-        body = jinja_template.render(title=title, a=a[title])
-        msg['Subject'] = '[НКЦКИ] + Уязвимости в +  vendor + products / '
-        msg['From'] = EMAIL_HOST_USER
-        msg['To'] = ''
-        msg.set_content(body)
-        with smtplib.SMTP(host=EMAIL_HOST, port=EMAIL_PORT) as smtp_server:
+    with open('bulletins.pickle', 'rb+') as f:
+        old_data = pickle.load(f)
+    for title in d.keys():
+        if title not in old_data:
+            msg = EmailMessage()
+            body = jinja_template.render(title=title, a=a[title])
+            msg['Subject'] = '[НКЦКИ] Уязвимости в ' + ", ".join(a[title]['products']) + ' / '
+            msg['From'] = EMAIL_HOST_USER
+            msg['To'] = ''
+            msg.set_content(body)
+            print('trying to send email')
+            smtp_server = smtplib.SMTP_SSL(host=EMAIL_HOST, port=EMAIL_PORT)
             try:
-                smtp_server.starttls(context=ssl.SSLContext(ssl.PROTOCOL_SSLv3))
+                print('login')
                 smtp_server.login(user=EMAIL_HOST_USER, password=EMAIL_HOST_PASSWORD)
                 smtp_server.send_message(msg)
                 print('Email sended {}'.format(msg['Subject']))
             except Exception as e:
                 print('Error sending email. Details: {} - {}'.format(e.__class__, e))
+                d.pop(title)
+    with open('bulletins.pickle', 'wb') as f:
+        pickle.dump({**d, **old_data}, f)

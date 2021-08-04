@@ -1,4 +1,3 @@
 requests
 beautifulsoup4
-camelot-py
-opencv-python
+jinja2
