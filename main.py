@@ -79,10 +79,8 @@ if __name__ == '__main__':
             msg['From'] = EMAIL_HOST_USER
             msg['To'] = ''
             msg.set_content(body)
-            print('trying to send email')
             smtp_server = smtplib.SMTP_SSL(host=EMAIL_HOST, port=EMAIL_PORT)
             try:
-                print('login')
                 smtp_server.login(user=EMAIL_HOST_USER, password=EMAIL_HOST_PASSWORD)
                 smtp_server.send_message(msg)
                 print('Email sended {}'.format(msg['Subject']))
