@@ -7,14 +7,14 @@ import pickle
 
 template = """
         <dl class="inline">
-            <dt>Summary</dt><dd>{{ a.title }}</dd>
-            <dt>Дата публикации</dt><dd>{{ a.publication_date }}</dd>
-            <dt>Дата выявления</dt><dd>{{ a.detection_date }}</dd>
-            <dt>Производитель ПО</dt><dd>{{ a.vendor }}</dd>
-            <dt>Наименование ПО</dt><dd>{{ a.products|join(', ') }}</dd>
-            <dt>Уровень опасности</dt><dd>{{ a.severity }}</dd>
-            <dt>CVSSv3 Score</dt><dd>{{ a.cvss_v3_score }} - {{ a.severity }}</dd>
-            <dt>Links</dt><dd>{{ a.bulletin_pdf_url }}</dd>
+            <dt>Summary</dt><dd>{{ d.title }}</dd>
+            <dt>Дата публикации</dt><dd>{{ d.publication_date }}</dd>
+            <dt>Дата выявления</dt><dd>{{ d.detection_date }}</dd>
+            <dt>Производитель ПО</dt><dd>{{ d.vendor }}</dd>
+            <dt>Наименование ПО</dt><dd>{{ d.products|join(', ') }}</dd>
+            <dt>Уровень опасности</dt><dd>{{ d.severity }}</dd>
+            <dt>CVSSv3 Score</dt><dd>{{ d.cvss_v3_score }} - {{ d.severity }}</dd>
+            <dt>Links</dt><dd>{{ d.bulletin_pdf_url }}</dd>
         </dl>"""
 
 
@@ -69,13 +69,13 @@ if __name__ == '__main__':
     EMAIL_PORT = 465
     EMAIL_HOST_PASSWORD = ''
     EMAIL_HOST_USER = ''
-    with open('bulletins.pickle', 'rb+') as f:
+    with open('bulletins.pickle', 'rb') as f:
         old_data = pickle.load(f)
     for title in d.keys():
         if title not in old_data:
             msg = EmailMessage()
-            body = jinja_template.render(title=title, a=a[title])
-            msg['Subject'] = '[НКЦКИ] Уязвимости в ' + ", ".join(a[title]['products']) + ' / '
+            body = jinja_template.render(title=title, d=d[title])
+            msg['Subject'] = '[НКЦКИ] Уязвимости в ' + ", ".join(d[title]['products']) + ' / '
             msg['From'] = EMAIL_HOST_USER
             msg['To'] = ''
             msg.set_content(body)
