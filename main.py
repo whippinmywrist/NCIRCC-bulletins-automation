@@ -4,6 +4,7 @@ from jinja2 import Template
 import smtplib
 from email.message import EmailMessage
 import pickle
+import os
 
 template = """
         <dl class="inline">
@@ -69,13 +70,19 @@ if __name__ == '__main__':
     EMAIL_PORT = 465
     EMAIL_HOST_PASSWORD = ''
     EMAIL_HOST_USER = ''
-    with open('bulletins.pickle', 'rb') as f:
-        old_data = pickle.load(f)
+    try:
+        with open('bulletins.pickle', 'rb') as f:
+            old_data = pickle.load(f)
+    except:
+        old_data = {}
     for title in d.keys():
         if title not in old_data:
             msg = EmailMessage()
             body = jinja_template.render(title=title, d=d[title])
-            msg['Subject'] = '[НКЦКИ] Уязвимости в ' + ", ".join(d[title]['products']) + ' / '
+            if 'products' in d[title]:
+                msg['Subject'] = '[НКЦКИ] Уязвимости в ' + ", ".join(d[title]['products']) + ' / '
+            else:
+                msg['Subject'] = '[НКЦКИ] Уязвимости в ' + d[title]['vendor'] + ' / '
             msg['From'] = EMAIL_HOST_USER
             msg['To'] = ''
             msg.set_content(body)
